@@ -11,6 +11,8 @@
         private ServerGameLogic _gameLogic;
         private bool _running = true;
 
+        public IEnumerable<NetPeer> GetConnectedPeers() => _server.ConnectedPeerList;
+
         public Server()
         {
             _listener = new EventBasedNetListener();
