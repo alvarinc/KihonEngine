@@ -32,10 +32,14 @@
                 // Map keys to movement
                 switch (keyPressed)
                 {
+                    case "UpArrow": dz = 1; break;  // Forward
                     case "Z": dz = 1; break;  // Forward
                     case "S": dz = -1; break; // Backward
+                    case "DownArrow": dz = -1; break; // Backward
                     case "Q": dx = -1; break; // Left
+                    case "LeftArrow": dx = -1; break; // Left
                     case "D": dx = 1; break;  // Right
+                    case "RightArrow": dx = 1; break;  // Right
                     case "Spacebar": dy = 1; break; // Up
                     case "C": dy = -1; break;     // Down
                 }
