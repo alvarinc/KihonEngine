@@ -8,29 +8,8 @@
     {
         private readonly Server _server;
 
-        // Represents a player in the 3D space
-        private class Player
-        {
-            public int Id { get; }
-            public float X { get; set; }
-            public float Y { get; set; }
-            public float Z { get; set; }
-
-            public Player(int id)
-            {
-                Id = id;
-                X = 0;
-                Y = 0;
-                Z = 0;
-            }
-
-            public string GetPosition()
-            {
-                return $"{X:0.0},{Y:0.0},{Z:0.0}";
-            }
-        }
-
-        private readonly Dictionary<int, Player> _players = new();
+        //private readonly Dictionary<int, Player> _players = new();
+        private readonly GameState _gameState = new();
 
         public ServerGameLogic(Server server)
         {
@@ -41,7 +20,7 @@
         {
             // Create a new player for the client
             var player = new Player(peer.Id);
-            _players[peer.Id] = player;
+            _gameState.Players[peer.Id] = player;
 
             Console.WriteLine($"[Server] Player connected. ID: {peer.Id}");
             _server.SendMessage(peer, $"CONNECTED:{player.GetPosition()}");
@@ -49,7 +28,7 @@
 
         public void OnMessageReceived(NetPeer peer, string message)
         {
-            if (!_players.TryGetValue(peer.Id, out Player player))
+            if (!_gameState.Players.TryGetValue(peer.Id, out Player player))
             {
                 Console.WriteLine("[Server] Received a message from an unknown player.");
                 return;
@@ -59,7 +38,7 @@
             {
                 Console.WriteLine($"[Server] Player {peer.Id} requested to stop. Disconnecting...");
                 peer.Disconnect();
-                _players.Remove(peer.Id);
+                _gameState.Players.Remove(peer.Id);
             }
             else if (message.StartsWith("MOVE:"))
             {
@@ -69,14 +48,32 @@
                     float.TryParse(parts[1], out float dy) &&
                     float.TryParse(parts[2], out float dz))
                 {
-                    player.X += dx;
-                    player.Y += dy;
-                    player.Z += dz;
+                    var updated = false;
+                    if (dx != 0 && player.X + dx >= _gameState.Map.MinX && player.X + dx <= _gameState.Map.MaxX)
+                    {
+                        player.X += dx;
+                        updated = true;
+                    }
 
-                    Console.WriteLine($"[Server] Player {peer.Id} moved to: {player.GetPosition()}");
+                    if (dy != 0 && player.Y + dy >= _gameState.Map.MinY && player.Y + dy <= _gameState.Map.MaxY)
+                    {
+                        player.Y += dy;
+                        updated = true;
+                    }
 
-                    // Notify all players of the updated position
-                    BroadcastMessage($"UPDATE:{peer.Id}:{player.GetPosition()}");
+                    if (dz != 0 && player.Z + dz >= _gameState.Map.MinZ && player.Z + dz <= _gameState.Map.MaxZ)
+                    {
+                        player.Z += dz;
+                        updated = true;
+                    }
+
+                    if (updated)
+                    {
+                        Console.WriteLine($"[Server] Player {peer.Id} moved to: {player.GetPosition()}");
+
+                        // Notify all players of the updated position
+                        BroadcastMessage($"UPDATE:{peer.Id}:{player.GetPosition()}");
+                    }
                 }
             }
         }
