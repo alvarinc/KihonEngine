@@ -5,6 +5,7 @@
     internal class ClientGameLogic
     {
         private readonly Client _client;
+        private int _playerId;
         private float _x, _y, _z; // Player position
 
         public ClientGameLogic(Client client)
@@ -65,10 +66,19 @@
             else if (message.StartsWith("UPDATE:"))
             {
                 string[] parts = message.Substring(7).Split(':');
-                if (parts.Length == 2 && Guid.TryParse(parts[0], out Guid playerId))
+                if (parts.Length == 2 && int.TryParse(parts[0], out int playerId))
                 {
                     string position = parts[1];
-                    Console.WriteLine($"[Client] Player {playerId} moved to: {position}");
+                    Console.WriteLine($"*[Client] Player {playerId} moved to: {position}");
+
+                    parts = message.Substring(9).Split(',');
+                    if (parts.Length == 3 &&
+                        float.TryParse(parts[0], out _x) &&
+                        float.TryParse(parts[1], out _y) &&
+                        float.TryParse(parts[2], out _z))
+                    {
+                        ClientRenderer.Render((int)_x, (int)_y, (int)_z);
+                    }
                 }
             }
         }

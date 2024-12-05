@@ -29,12 +29,12 @@ namespace KihonEngin.Core
 
         public static MapDescription DefaultMap => new MapDescription
         {
-            MaxX = 20,
-            MaxY = 20,
-            MaxZ = 20,
-            MinX = -20,
-            MinY = -20,
-            MinZ = -20
+            MaxX = 10,
+            MaxY = 10,
+            MaxZ = 10,
+            MinX = -10,
+            MinY = -10,
+            MinZ = -10
         };
     }
 
