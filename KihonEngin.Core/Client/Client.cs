@@ -24,7 +24,9 @@
 
         public void Run(string address, int port, string playerGuid, string playerName)
         {
-            Run(new GameServer { Address = address, Port = port }, new Player { Guid = playerGuid, Name = playerName });
+            Run(
+                new GameServer { Address = address, Port = port }, 
+                new Player { Guid = playerGuid, Name = playerName });
         }
 
         public void Run(GameServer gameServer, Player player)
@@ -34,6 +36,7 @@
                 Console.WriteLine($"Connected to server: {peer}");
                 _gameLogic.ViewAs(player.Guid);
 
+                Console.WriteLine($"Join game as {player.Name}");
                 var cmd = new GameCommandInput("join");
                 cmd.Args["guid"] = player.Guid;
                 cmd.Args["name"] = player.Name;
@@ -71,7 +74,12 @@
 
             while (_running)
             {
-                _gameLogic.HandleInput();
+                var input = _gameLogic.HandleInput();
+                if (input != null)
+                {
+                    SendMessage(input);
+                }
+
                 _client.PollEvents();
                 Thread.Sleep(15);
             }
@@ -79,20 +87,15 @@
             _client.Stop();
         }
 
-        public void SendMessage(GameCommandInput cmd)
+        public void SendMessage(GameCommandInput input)
         {
-            if (_client != null && _client.FirstPeer != null && _client.FirstPeer.ConnectionState == ConnectionState.Connected)
+            if (input != null && _client != null && _client.FirstPeer != null && _client.FirstPeer.ConnectionState == ConnectionState.Connected)
             {
                 var writer = new NetDataWriter();
-                var json = JsonConvert.SerializeObject(cmd);
+                var json = JsonConvert.SerializeObject(input);
                 writer.Put(json);
                 _client.FirstPeer.Send(writer, DeliveryMethod.ReliableOrdered);
             }
-        }
-
-        public void Stop()
-        {
-            _running = false;
         }
     }
 }

@@ -6,7 +6,6 @@
     using System;
     using System.Collections.Generic;
 
-
     internal class ServerGameLogic
     {
         private readonly Server _server;
