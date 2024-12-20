@@ -45,11 +45,11 @@
             {
                 string message = dataReader.GetString();
                 Console.WriteLine($"[Server] Received: {message}");
-                GameCommand input = null;
+                GameCommandInput input = null;
 
                 try
                 {
-                    input = JsonConvert.DeserializeObject<GameCommand>(message);
+                    input = JsonConvert.DeserializeObject<GameCommandInput>(message);
                 }
                 catch (Exception ex)
                 {
@@ -74,7 +74,7 @@
             _server.Stop();
         }
 
-        public void SendMessage(NetPeer peer, GameCommand cmd)
+        public void SendMessage(NetPeer peer, GameCommandInput cmd)
         {
             var writer = new NetDataWriter();
             var json = JsonConvert.SerializeObject(cmd);

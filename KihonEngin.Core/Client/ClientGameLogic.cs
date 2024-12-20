@@ -5,7 +5,6 @@
     using Microsoft.AspNetCore.JsonPatch;
     using Newtonsoft.Json;
     using System;
-    using System.Text.Json;
 
     internal class ClientGameLogic
     {
@@ -33,7 +32,7 @@
                 if (keyInfo.Key == ConsoleKey.Escape)
                 {
                     Console.WriteLine("[Client] ESC key pressed. Stopping client...");
-                    _client.SendMessage(new GameCommand("exit"));
+                    _client.SendMessage(new GameCommandInput("exit"));
                     _client.Stop();
                     return;
                 }
@@ -56,7 +55,7 @@
                 }
 
                 // Send movement command to the server
-                var cmd = new GameCommand("move");
+                var cmd = new GameCommandInput("move");
                 cmd.Args["dx"] = dx.ToString();
                 cmd.Args["dy"] = dy.ToString();
                 cmd.Args["dz"] = dz.ToString();
@@ -64,7 +63,7 @@
             }
         }
 
-        public void OnMessageReceived(GameCommand cmd)
+        public void OnMessageReceived(GameCommandInput cmd)
         {
             if (cmd.Command == "sync")
             {
@@ -91,7 +90,6 @@
                 {
                     Console.WriteLine($"[Client] Connected. No position yet.");
                 }
-                
 
                 ClientRenderer.Render(_gameState, _playerId);
             }

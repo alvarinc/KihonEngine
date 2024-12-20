@@ -1,5 +1,6 @@
 ﻿namespace KihonEngine.Core.Server
 {
+    using KihonEngine.Core.Server.Commands;
     using KihonEngine.Core.State;
     using LiteNetLib;
     using System;
@@ -9,7 +10,6 @@
     internal class ServerGameLogic
     {
         private readonly Server _server;
-
         private readonly Dictionary<int, Player> _connectedUsers = new();
         private readonly GameState _gameState = new();
 
@@ -25,7 +25,7 @@
             Console.WriteLine($"[Server] Player connected. ID: {peer.Id}");
         }
 
-        public void OnMessageReceived(NetPeer peer, GameCommand input)
+        public void OnMessageReceived(NetPeer peer, GameCommandInput input)
         {
             if (!_connectedUsers.TryGetValue(peer.Id, out Player player))
             {
@@ -40,89 +40,59 @@
             }
 
             var synchronizer = new StateSynchronizer<GameState>(_gameState);
-            var stateUpdated = false;
-            var peerFullUpdate = false;
+            IGameCommand command = null;
 
             if (input.Command == "join")
             {
-                player.Guid = input.Args["guid"];
-                player.Name = input.Args["name"];
-
-                _gameState.Players.Add(peer.Id, new PlayerState(peer.Id));
-                _gameState.Players[peer.Id].Name = player.Name;
-                _gameState.Players[peer.Id].Guid = player.Guid;
-                stateUpdated = true;
-                peerFullUpdate = true;
-                Console.WriteLine($"[Server] Player {peer.Id} Logged as {player.Name}");
+                command = new JoinCommand();
             }
             else if (input.Command == "exit")
             {
-                Console.WriteLine($"[Server] Player {player.Name} requested to stop. Disconnecting...");
-                peer.Disconnect();
-                _gameState.Players.Remove(peer.Id);
-                _connectedUsers.Remove(peer.Id);
-                stateUpdated = true;
+                command = new ExitCommand();
             }
             else if (input.Command == "move")
             {
-                var dxString = input.Args["dx"];
-                var dyString = input.Args["dy"];
-                var dzString = input.Args["dz"];
+                command = new MoveCommand();
+            }
+            else
+            {
+                Console.WriteLine($"Command not registered : {input.Command}");
+            }
 
-                if (float.TryParse(dxString, out float dx) &&
-                    float.TryParse(dyString, out float dy) &&
-                    float.TryParse(dzString, out float dz))
+            if (command != null && command.ValidateParameters(input))
+            {
+                var result = command.Execute(_gameState, player, peer.Id);
+
+                if (result.StateUpdated)
                 {
-                    var playerState = _gameState.Players[peer.Id];
-                    if (dx != 0 && playerState.Position.X + dx >= _gameState.Map.MinX && playerState.Position.X + dx <= _gameState.Map.MaxX)
-                    {
-                        playerState.Position.X += dx;
-                        stateUpdated = true;
-                    }
+                    var patchCmd = new GameCommandInput("sync");
+                    patchCmd.Args["entity"] = "gamestate";
+                    patchCmd.Args["mode"] = "patch";
+                    patchCmd.Args["value"] = synchronizer.GetJsonPatch();
 
-                    if (dy != 0 && playerState.Position.Y + dy >= _gameState.Map.MinY && playerState.Position.Y + dy <= _gameState.Map.MaxY)
-                    {
-                        playerState.Position.Y += dy;
-                        stateUpdated = true;
-                    }
+                    var fullCmd = new GameCommandInput("sync");
+                    fullCmd.Args["entity"] = "gamestate";
+                    fullCmd.Args["mode"] = "full";
+                    fullCmd.Args["value"] = synchronizer.GetJson();
 
-                    if (dz != 0 && playerState.Position.Z + dz >= _gameState.Map.MinZ && playerState.Position.Z + dz <= _gameState.Map.MaxZ)
+                    foreach (var connectedPeer in _server.GetConnectedPeers())
                     {
-                        playerState.Position.Z += dz;
-                        stateUpdated = true;
-                    }
-
-                    if (stateUpdated)
-                    {
-                        Console.WriteLine($"[Server] Player {playerState.Name} moved to: {playerState.Position.X}:{playerState.Position.Y}:{playerState.Position.Z}");
+                        if (result.PeerInitializated && connectedPeer == peer)
+                        {
+                            _server.SendMessage(connectedPeer, fullCmd);
+                        }
+                        else
+                        {
+                            _server.SendMessage(connectedPeer, patchCmd);
+                        }
                     }
                 }
             }
 
-            if (peerFullUpdate)
+            if (!_gameState.Players.ContainsKey(peer.Id))
             {
-                var initCmd = new GameCommand("sync");
-                initCmd.Args["entity"] = "gamestate";
-                initCmd.Args["mode"] = "full";
-                initCmd.Args["value"] = synchronizer.GetJson();
-                _server.SendMessage(peer, initCmd);
-            }
-
-            if (stateUpdated)
-            {
-                var updateCmd = new GameCommand("sync");
-                updateCmd.Args["entity"] = "gamestate";
-                updateCmd.Args["mode"] = "patch";
-                updateCmd.Args["value"] = synchronizer.GetJsonPatch();
-                BroadcastMessage(updateCmd);
-            }
-        }
-
-        private void BroadcastMessage(GameCommand cmd)
-        {
-            foreach (var peer in _server.GetConnectedPeers())
-            {
-                _server.SendMessage(peer, cmd);
+                peer.Disconnect();
+                _connectedUsers.Remove(peer.Id);
             }
         }
     }

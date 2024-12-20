@@ -34,7 +34,7 @@
                 Console.WriteLine($"Connected to server: {peer}");
                 _gameLogic.ViewAs(player.Guid);
 
-                var cmd = new GameCommand("join");
+                var cmd = new GameCommandInput("join");
                 cmd.Args["guid"] = player.Guid;
                 cmd.Args["name"] = player.Name;
                 SendMessage(cmd);
@@ -46,7 +46,7 @@
                 Console.WriteLine($"[Client] Received: {message}");
                 try
                 {
-                    var cmd = JsonConvert.DeserializeObject<GameCommand>(message);
+                    var cmd = JsonConvert.DeserializeObject<GameCommandInput>(message);
                     _gameLogic.OnMessageReceived(cmd);
                 }
                 catch (Exception ex)
@@ -79,7 +79,7 @@
             _client.Stop();
         }
 
-        public void SendMessage(GameCommand cmd)
+        public void SendMessage(GameCommandInput cmd)
         {
             if (_client != null && _client.FirstPeer != null && _client.FirstPeer.ConnectionState == ConnectionState.Connected)
             {
