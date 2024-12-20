@@ -4,17 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace KihonEngin.Core
+namespace KihonEngine.Core.State
 {
-    internal class GameState
+    public class GameState
     {
-        public GameState() 
+        public GameState()
         {
             Map = MapDescription.DefaultMap;
         }
 
-        public Dictionary<int, Player> Players { get; set; } = new();
-        
+        public Dictionary<int, PlayerState> Players { get; set; } = new();
+
         public MapDescription Map { get; set; } = new();
     }
 
@@ -38,24 +38,24 @@ namespace KihonEngin.Core
         };
     }
 
-    internal class Player
+    public class PlayerState
     {
-        public int Id { get; }
+        public int PeerId { get; }
+        public string Guid { get; set; }
+        public string Name { get; set; }
+        public Position Position { get; set; }
+
+        public PlayerState(int peerId)
+        {
+            PeerId = peerId;
+            Position = new Position();
+        }
+    }
+
+    public class Position
+    {
         public float X { get; set; }
         public float Y { get; set; }
         public float Z { get; set; }
-
-        public Player(int id)
-        {
-            Id = id;
-            X = 0;
-            Y = 0;
-            Z = 0;
-        }
-
-        public string GetPosition()
-        {
-            return $"{X:0.0},{Y:0.0},{Z:0.0}";
-        }
     }
 }

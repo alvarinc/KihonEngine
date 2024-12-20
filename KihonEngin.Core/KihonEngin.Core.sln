@@ -3,7 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.3.32922.545
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KihonEngin.Core", "KihonEngin.Core.csproj", "{1B6E9DA4-BE0D-4D79-8B26-5679B252602C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KihonEngine.Core", "KihonEngine.Core.csproj", "{1B6E9DA4-BE0D-4D79-8B26-5679B252602C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{939787FA-3819-4C25-9F5D-570885F8B78B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KihonEngine.Client", "..\KihonEngine.Client\KihonEngine.Client.csproj", "{88F7B232-7875-4427-B884-46A08C596EEB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KihonEngine.Server", "..\KihonEngine.Server\KihonEngine.Server.csproj", "{06557E75-9B8D-4208-A57A-0BD3F05F8E72}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,9 +21,21 @@ Global
 		{1B6E9DA4-BE0D-4D79-8B26-5679B252602C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1B6E9DA4-BE0D-4D79-8B26-5679B252602C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1B6E9DA4-BE0D-4D79-8B26-5679B252602C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88F7B232-7875-4427-B884-46A08C596EEB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88F7B232-7875-4427-B884-46A08C596EEB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88F7B232-7875-4427-B884-46A08C596EEB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88F7B232-7875-4427-B884-46A08C596EEB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06557E75-9B8D-4208-A57A-0BD3F05F8E72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06557E75-9B8D-4208-A57A-0BD3F05F8E72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06557E75-9B8D-4208-A57A-0BD3F05F8E72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06557E75-9B8D-4208-A57A-0BD3F05F8E72}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{88F7B232-7875-4427-B884-46A08C596EEB} = {939787FA-3819-4C25-9F5D-570885F8B78B}
+		{06557E75-9B8D-4208-A57A-0BD3F05F8E72} = {939787FA-3819-4C25-9F5D-570885F8B78B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {FA0BEBBC-1E01-4914-9BBE-CC8E06C4F815}

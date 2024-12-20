@@ -1,16 +1,26 @@
-﻿namespace KihonEngin.Core
+﻿namespace KihonEngine.Core.Client
 {
+    using KihonEngine.Core.Server;
+    using KihonEngine.Core.State;
+    using Microsoft.AspNetCore.JsonPatch;
+    using Newtonsoft.Json;
     using System;
+    using System.Text.Json;
 
     internal class ClientGameLogic
     {
         private readonly Client _client;
-        private int _playerId;
-        private float _x, _y, _z; // Player position
+        private string _playerId;
+        private GameState _gameState = null;
 
         public ClientGameLogic(Client client)
         {
             _client = client;
+        }
+
+        public void ViewAs(string playerId)
+        {
+            _playerId = playerId;
         }
 
         public void HandleInput()
@@ -23,7 +33,7 @@
                 if (keyInfo.Key == ConsoleKey.Escape)
                 {
                     Console.WriteLine("[Client] ESC key pressed. Stopping client...");
-                    _client.SendMessage("STOP");
+                    _client.SendMessage(new GameCommand("exit"));
                     _client.Stop();
                     return;
                 }
@@ -46,40 +56,36 @@
                 }
 
                 // Send movement command to the server
-                _client.SendMessage($"MOVE:{dx},{dy},{dz}");
+                var cmd = new GameCommand("move");
+                cmd.Args["dx"] = dx.ToString();
+                cmd.Args["dy"] = dy.ToString();
+                cmd.Args["dz"] = dz.ToString();
+                _client.SendMessage(cmd);
             }
         }
 
-        public void OnMessageReceived(string message)
+        public void OnMessageReceived(GameCommand cmd)
         {
-            if (message.StartsWith("CONNECTED:"))
+            if (cmd.Command == "sync")
             {
-                string[] parts = message.Substring(10).Split(',');
-                if (parts.Length == 3 &&
-                    float.TryParse(parts[0], out _x) &&
-                    float.TryParse(parts[1], out _y) &&
-                    float.TryParse(parts[2], out _z))
-                {
-                    Console.WriteLine($"[Client] Connected. Initial position: {_x}, {_y}, {_z}");
-                }
-            }
-            else if (message.StartsWith("UPDATE:"))
-            {
-                string[] parts = message.Substring(7).Split(':');
-                if (parts.Length == 2 && int.TryParse(parts[0], out int playerId))
-                {
-                    string position = parts[1];
-                    Console.WriteLine($"*[Client] Player {playerId} moved to: {position}");
+                var entity = cmd.Args["entity"];
+                var mode = cmd.Args["mode"];
+                var value = cmd.Args["value"];
 
-                    parts = message.Substring(9).Split(',');
-                    if (parts.Length == 3 &&
-                        float.TryParse(parts[0], out _x) &&
-                        float.TryParse(parts[1], out _y) &&
-                        float.TryParse(parts[2], out _z))
-                    {
-                        ClientRenderer.Render((int)_x, (int)_y, (int)_z);
-                    }
+                if (mode == "full")
+                {
+                    _gameState = JsonConvert.DeserializeObject<GameState>(value);
                 }
+                else if (mode == "patch")
+                {
+                    var jsonPatch = JsonConvert.DeserializeObject<JsonPatchDocument>(value);
+                    jsonPatch.ApplyTo(_gameState);
+                }
+
+                var player = _gameState.Players.Values.First(x => x.Guid == _playerId);
+                Console.WriteLine($"[Client] Connected. Position: {player.Position.X}, {player.Position.Y}, {player.Position.Z}");
+
+                ClientRenderer.Render(_gameState, _playerId);
             }
         }
     }

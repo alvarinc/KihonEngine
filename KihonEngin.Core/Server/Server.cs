@@ -1,10 +1,13 @@
-﻿namespace KihonEngin.Core
+﻿namespace KihonEngine.Core.Server
 {
     using LiteNetLib;
     using LiteNetLib.Utils;
+    using Newtonsoft.Json;
     using System;
+    using System.Text.Json;
+    using System.Text.Json.Nodes;
 
-    internal class Server
+    public class Server
     {
         private NetManager _server;
         private EventBasedNetListener _listener;
@@ -27,7 +30,7 @@
             _listener.ConnectionRequestEvent += request =>
             {
                 if (_server.ConnectedPeersCount < 10)
-                    request.AcceptIfKey("SomeConnectionKey");
+                    request.AcceptIfKey("Client=KihonEngine.Core.Client");
                 else
                     request.Reject();
             };
@@ -40,10 +43,26 @@
 
             _listener.NetworkReceiveEvent += (fromPeer, dataReader, deliveryMethod, channel) =>
             {
-                string message = dataReader.GetString(100);
+                string message = dataReader.GetString();
                 Console.WriteLine($"[Server] Received: {message}");
-                _gameLogic.OnMessageReceived(fromPeer, message);
+                GameCommand input = null;
+
+                try
+                {
+                    input = JsonConvert.DeserializeObject<GameCommand>(message);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Server] invalid message from {fromPeer.Id}");
+                }
+
+                if (input != null)
+                {
+                    _gameLogic.OnMessageReceived(fromPeer, input);
+                }
+
                 dataReader.Recycle();
+
             };
 
             while (_running)
@@ -55,10 +74,11 @@
             _server.Stop();
         }
 
-        public void SendMessage(NetPeer peer, string message)
+        public void SendMessage(NetPeer peer, GameCommand cmd)
         {
             var writer = new NetDataWriter();
-            writer.Put(message);
+            var json = JsonConvert.SerializeObject(cmd);
+            writer.Put(json);
             peer.Send(writer, DeliveryMethod.ReliableOrdered);
         }
 
