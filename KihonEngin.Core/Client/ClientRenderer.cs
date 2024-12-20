@@ -11,7 +11,13 @@ namespace KihonEngine.Core.Client
     {
         public static void Render(GameState _gameState, string playerId)
         {
-            var player = _gameState.Players.Values.First(x => x.Guid == playerId);
+            var player = _gameState.Players.Values.FirstOrDefault(x => x.Guid == playerId);
+            if (player == null)
+            {
+                Console.WriteLine("Not on map yet.");
+                return;
+            }
+
             Console.WriteLine($"connection {player.PeerId} : {player.Name}");
 
             for (int column = _gameState.Map.MinZ; column <= _gameState.Map.MaxZ; column++)

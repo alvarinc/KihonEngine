@@ -34,7 +34,7 @@
                 Console.WriteLine($"Connected to server: {peer}");
                 _gameLogic.ViewAs(player.Guid);
 
-                var cmd = new GameCommand("login");
+                var cmd = new GameCommand("join");
                 cmd.Args["guid"] = player.Guid;
                 cmd.Args["name"] = player.Name;
                 SendMessage(cmd);

@@ -82,8 +82,16 @@
                     jsonPatch.ApplyTo(_gameState);
                 }
 
-                var player = _gameState.Players.Values.First(x => x.Guid == _playerId);
-                Console.WriteLine($"[Client] Connected. Position: {player.Position.X}, {player.Position.Y}, {player.Position.Z}");
+                var player = _gameState.Players.Values.FirstOrDefault(x => x.Guid == _playerId);
+                if ( player != null)
+                {
+                    Console.WriteLine($"[Client] Connected. Position: {player.Position.X}, {player.Position.Y}, {player.Position.Z}");
+                }
+                else
+                {
+                    Console.WriteLine($"[Client] Connected. No position yet.");
+                }
+                
 
                 ClientRenderer.Render(_gameState, _playerId);
             }
