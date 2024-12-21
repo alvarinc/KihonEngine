@@ -1,5 +1,6 @@
 ﻿namespace KihonEngine.Core.Server
 {
+    using KihonEngine.Core.Client;
     using LiteNetLib;
     using LiteNetLib.Utils;
     using Newtonsoft.Json;
@@ -65,13 +66,26 @@
 
             };
 
-            while (_running)
-            {
-                _server.PollEvents();
-                Thread.Sleep(15);
-            }
+            GameLoop();
 
             _server.Stop();
+        }
+
+        private void GameLoop()
+        {
+            while (_running)
+            {
+                // Update players
+                HandleClientEvents();
+
+                // Update AIs
+                // TODO
+
+                // Update physics
+                // TODO
+
+                Thread.Sleep(15);
+            }
         }
 
         public void SendMessage(NetPeer peer, GameCommandInput cmd)
@@ -82,9 +96,9 @@
             peer.Send(writer, DeliveryMethod.ReliableOrdered);
         }
 
-        public void Stop()
+        private void HandleClientEvents()
         {
-            _running = false;
+            _server.PollEvents();
         }
     }
 }

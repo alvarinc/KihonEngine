@@ -1,20 +1,20 @@
 ﻿namespace KihonEngine.Core.Client
 {
+    using KihonEngine.Core.Client.Commands;
+    using KihonEngine.Core.Client.Input.Keyboard;
     using KihonEngine.Core.Server;
     using KihonEngine.Core.State;
-    using Microsoft.AspNetCore.JsonPatch;
-    using Newtonsoft.Json;
-    using System;
 
     internal class ClientGameLogic
     {
-        private readonly Client _client;
         private string _playerId;
         private GameState _gameState = null;
+        private bool _gameStateUpdated = false;
+        private KeyboardEventHandler _keyboardEventHandler;
 
-        public ClientGameLogic(Client client)
+        public ClientGameLogic()
         {
-            _client = client;
+            _keyboardEventHandler = new KeyboardEventHandler();
         }
 
         public void ViewAs(string playerId)
@@ -22,78 +22,41 @@
             _playerId = playerId;
         }
 
-        public GameCommandInput HandleInput()
+        public List<GameCommandInput> HandleInputEvents()
         {
-            if (Console.KeyAvailable)
-            {
-                ConsoleKeyInfo keyInfo = Console.ReadKey(intercept: true);
-                string keyPressed = keyInfo.Key.ToString();
-
-                if (keyPressed == "Escape")
-                {
-                    Console.WriteLine("[Client] ESC key pressed. Stopping client...");
-                    return new GameCommandInput("exit");
-                }
-                else
-                {
-                    float dx = 0, dy = 0, dz = 0;
-
-                    // Map keys to movement
-                    switch (keyPressed)
-                    {
-                        case "UpArrow": dz = 1; break;  // Forward
-                        case "Z": dz = 1; break;  // Forward
-                        case "S": dz = -1; break; // Backward
-                        case "DownArrow": dz = -1; break; // Backward
-                        case "Q": dx = -1; break; // Left
-                        case "LeftArrow": dx = -1; break; // Left
-                        case "D": dx = 1; break;  // Right
-                        case "RightArrow": dx = 1; break;  // Right
-                        case "Spacebar": dy = 1; break; // Up
-                        case "C": dy = -1; break;     // Down
-                    }
-
-                    // Send movement command to the server
-                    var cmd = new GameCommandInput("move");
-                    cmd.Args["dx"] = dx.ToString();
-                    cmd.Args["dy"] = dy.ToString();
-                    cmd.Args["dz"] = dz.ToString();
-                    return cmd;
-                }
-            }
-
-            return null;
+            return _keyboardEventHandler.HandleEvents();
         }
 
-        public void OnMessageReceived(GameCommandInput cmd)
+        public void HandleServerMessage(GameCommandInput input)
         {
-            if (cmd.Command == "sync")
+            IGameCommand cmd = null;
+            if (input.Command == "sync")
             {
-                var entity = cmd.Args["entity"];
-                var mode = cmd.Args["mode"];
-                var value = cmd.Args["value"];
+                cmd = new SynchronizeCommand();
+            }
 
-                if (mode == "full")
+            if (cmd != null)
+            {
+                if (cmd.ValidateParameters(input))
                 {
-                    _gameState = JsonConvert.DeserializeObject<GameState>(value);
-                }
-                else if (mode == "patch")
-                {
-                    var jsonPatch = JsonConvert.DeserializeObject<JsonPatchDocument>(value);
-                    jsonPatch.ApplyTo(_gameState);
-                }
+                    var context = new GameCommandContext { GameState = _gameState, PlayerId = _playerId };
+                    cmd.Execute(context);
 
-                var player = _gameState.Players.Values.FirstOrDefault(x => x.Guid == _playerId);
-                if ( player != null)
-                {
-                    Console.WriteLine($"[Client] Connected. Position: {player.Position.X}, {player.Position.Y}, {player.Position.Z}");
+                    if (context.StateUpdated)
+                    {
+                        _gameState = context.GameState;
+                        _gameStateUpdated |= context.StateUpdated;
+                    }
                 }
-                else
-                {
-                    Console.WriteLine($"[Client] Connected. No position yet.");
-                }
+            }
+        }
 
+        public void RenderOutput(bool force = false)
+        {
+            if (force || _gameStateUpdated)
+            {
                 ClientRenderer.Render(_gameState, _playerId);
+                _gameStateUpdated = false;
             }
         }
     }

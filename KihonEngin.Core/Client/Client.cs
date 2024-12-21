@@ -6,20 +6,19 @@
     using LiteNetLib.Utils;
     using Newtonsoft.Json;
     using System;
-    using System.Text.Json;
 
     public class Client
     {
         private NetManager _client;
         private EventBasedNetListener _listener;
         private ClientGameLogic _gameLogic;
-        private bool _running = true;
+        private bool _inGame = false;
 
         public Client()
         {
             _listener = new EventBasedNetListener();
             _client = new NetManager(_listener);
-            _gameLogic = new ClientGameLogic(this);
+            _gameLogic = new ClientGameLogic();
         }
 
         public void Run(string address, int port, string playerGuid, string playerName)
@@ -49,8 +48,8 @@
                 Console.WriteLine($"[Client] Received: {message}");
                 try
                 {
-                    var cmd = JsonConvert.DeserializeObject<GameCommandInput>(message);
-                    _gameLogic.OnMessageReceived(cmd);
+                    var input = JsonConvert.DeserializeObject<GameCommandInput>(message);
+                    _gameLogic.HandleServerMessage(input);
                 }
                 catch (Exception ex)
                 { 
@@ -63,28 +62,42 @@
             _listener.PeerDisconnectedEvent += (peer, disconnectInfo) =>
             {
                 Console.WriteLine("[Client] Disconnected from server.");
-                _running = false;
+                _inGame = false;
             };
 
             Console.WriteLine("[Client] Connecting...");
+
             _client.Start();
             _client.Connect(gameServer.Address, gameServer.Port, "Client=KihonEngine.Core.Client");
 
             Console.WriteLine("[Client] Press keys to send to server. Press ESC to stop.");
+            GameLoop();
 
-            while (_running)
+            _client.Stop();
+        }
+
+        private void GameLoop()
+        {
+            _inGame = true;
+            while (_inGame)
             {
-                var input = _gameLogic.HandleInput();
-                if (input != null)
+                var inputs = _gameLogic.HandleInputEvents();
+                foreach (var input in inputs)
                 {
                     SendMessage(input);
                 }
 
-                _client.PollEvents();
+                HandleServerEvents();
+
+                _gameLogic.RenderOutput();
+
                 Thread.Sleep(15);
             }
+        }
 
-            _client.Stop();
+        private void HandleServerEvents()
+        {
+            _client.PollEvents();
         }
 
         public void SendMessage(GameCommandInput input)
