@@ -6,7 +6,7 @@
         {
             Console.WriteLine("Starting server...");
             var server = new KihonEngine.Core.Server.Server();
-            server.Run();
+            server.Run(9050);
         }
     }
 }

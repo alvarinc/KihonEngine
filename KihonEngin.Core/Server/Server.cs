@@ -24,9 +24,9 @@
             _gameLogic = new ServerGameLogic(this);
         }
 
-        public void Run()
+        public void Run(int port)
         {
-            _server.Start(9050);
+            _server.Start(port);
 
             _listener.ConnectionRequestEvent += request =>
             {
